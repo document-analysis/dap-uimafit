@@ -60,7 +60,7 @@ public class ConverterAnnotator extends Annotator
 	{
 		try
 		{
-			jcas.setDocumentLanguage( ((LanguageFeature) document.getFeatures().get(LanguageFeature.NAME)).getLanguage() );
+			jcas.setDocumentLanguage(LanguageFeature.getDocumentLanguage(document));
 			jcas.setDocumentText(document.getText());
 			uimaAnalysisEngine.process(jcas);
 			for (org.apache.uima.jcas.tcas.Annotation uimaAnnotation : jcas.getAnnotationIndex())
