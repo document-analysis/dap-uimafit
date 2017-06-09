@@ -31,6 +31,7 @@ public class ConverterAnnotator extends Annotator
 	public ConverterAnnotator(AnalysisEngine uimaAnalysisEngine)
 	{
 		this(uimaAnalysisEngine, createJCas());
+		this.casShouldBeReleased = true;
 	}
 	
 	public ConverterAnnotator(AnalysisEngine uimaAnalysisEngine, JCas jcas)
@@ -38,11 +39,13 @@ public class ConverterAnnotator extends Annotator
 		this(
 				Collections.singletonMap(org.apache.uima.jcas.tcas.Annotation.class, DefaultAnnotationConverter.INSTANCE),
 				uimaAnalysisEngine, jcas);
+		this.casShouldBeReleased = false;
 	}
 	
 	public ConverterAnnotator(Map<Class<?>, AnnotationConverter<?>> converters, AnalysisEngine uimaAnalysisEngine)
 	{
 		this(converters, uimaAnalysisEngine, createJCas());
+		this.casShouldBeReleased = true;
 	}
 
 	public ConverterAnnotator(Map<Class<?>, AnnotationConverter<?>> converters, AnalysisEngine uimaAnalysisEngine, JCas jcas)
@@ -51,6 +54,7 @@ public class ConverterAnnotator extends Annotator
 		this.sortedAnnotationClasses = sortClasses(converters.keySet());
 		this.uimaAnalysisEngine = uimaAnalysisEngine;
 		this.jcas = jcas;
+		this.casShouldBeReleased = false;
 	}
 	
 	
@@ -83,7 +87,16 @@ public class ConverterAnnotator extends Annotator
 			throw new DapException(e);
 		}
 	}
-
+	
+	@Override
+	public void close()
+	{
+		super.close();
+		if ( (jcas!=null) && (casShouldBeReleased) )
+		{
+			jcas.release();
+		}
+	}
 
 
 	private static class ClassComparator implements Comparator<Class<?>>
@@ -122,6 +135,7 @@ public class ConverterAnnotator extends Annotator
 	private final List<Class<?>> sortedAnnotationClasses;
 	private final AnalysisEngine uimaAnalysisEngine;
 	private final JCas jcas;
+	private boolean casShouldBeReleased = false;
 	
 	private static final ClassComparator classComparator = new ClassComparator();
 }
