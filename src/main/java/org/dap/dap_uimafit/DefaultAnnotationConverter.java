@@ -52,8 +52,12 @@ public class DefaultAnnotationConverter implements AnnotationConverter<DefaultUi
 						if (!EXCLUDE_GETTERS.contains(name))
 						{
 							String fieldName = lowerFirstLetter(name.substring("get".length()));
-							String value = method.invoke(uimaAnnotation).toString();
-							fields.put(fieldName, value);
+							Object valueObject = method.invoke(uimaAnnotation);
+							if (valueObject!=null)
+							{
+								String value = valueObject.toString();
+								fields.put(fieldName, value);
+							}
 						}
 					}
 				}

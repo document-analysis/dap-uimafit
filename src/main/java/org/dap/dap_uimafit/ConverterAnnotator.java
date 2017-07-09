@@ -13,6 +13,7 @@ import org.apache.uima.analysis_engine.AnalysisEngine;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.fit.factory.JCasFactory;
 import org.apache.uima.jcas.JCas;
+import org.apache.uima.jcas.tcas.DocumentAnnotation;
 import org.dap.annotators.Annotator;
 import org.dap.common.DapException;
 import org.dap.data_structures.AnnotationContents;
@@ -79,17 +80,20 @@ public class ConverterAnnotator extends Annotator
 			for (org.apache.uima.jcas.tcas.Annotation uimaAnnotation : jcas.getAnnotationIndex())
 			{
 				Class<?> uimaAnnotationClass = uimaAnnotation.getClass();
-				for (Class<?> converterUimaAnnotationClass : sortedAnnotationClasses)
+				if (DocumentAnnotation.class != uimaAnnotationClass)
 				{
-					if (converterUimaAnnotationClass.isAssignableFrom(uimaAnnotationClass))
+					for (Class<?> converterUimaAnnotationClass : sortedAnnotationClasses)
 					{
-						AnnotationContents annotationContents = converters.get(converterUimaAnnotationClass).convert(uimaAnnotation);
-						AnnotationReference reference = document.addAnnotation(uimaAnnotation.getBegin(), uimaAnnotation.getEnd(), annotationContents);
-						map(mapDapToUima, mapUimaToDap, reference, uimaAnnotation);
-						break;
+						if (converterUimaAnnotationClass.isAssignableFrom(uimaAnnotationClass))
+						{
+							AnnotationContents annotationContents = converters.get(converterUimaAnnotationClass).convert(uimaAnnotation);
+							AnnotationReference reference = document.addAnnotation(uimaAnnotation.getBegin(), uimaAnnotation.getEnd(), annotationContents);
+							map(mapDapToUima, mapUimaToDap, reference, uimaAnnotation);
+							break;
+						}
 					}
+					// If not converted, then the caller just don't want this type of annotation to be converted.
 				}
-				// If not converted, then the caller just don't want this type of annotation to be converted.
 			}
 			if (referencesAdapter!=null)
 			{
