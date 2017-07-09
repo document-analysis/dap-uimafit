@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,6 +16,7 @@ import org.apache.uima.jcas.JCas;
 import org.dap.annotators.Annotator;
 import org.dap.common.DapException;
 import org.dap.data_structures.AnnotationContents;
+import org.dap.data_structures.AnnotationReference;
 import org.dap.data_structures.Document;
 import org.dap.data_structures.LanguageFeature;
 
@@ -58,12 +60,19 @@ public class ConverterAnnotator extends Annotator
 	}
 	
 	
+	public void setReferencesAdapter(ReferencesAdapter referencesAdapter)
+	{
+		this.referencesAdapter = referencesAdapter;
+	}
 
 	@Override
 	public synchronized void annotate(Document document) // it must be synchronized, because jcas is a member field
 	{
 		try
 		{
+			Map<AnnotationReference, org.apache.uima.jcas.tcas.Annotation> mapDapToUima = new LinkedHashMap<>();
+			Map<org.apache.uima.jcas.tcas.Annotation, AnnotationReference> mapUimaToDap = new LinkedHashMap<>();
+			
 			jcas.setDocumentLanguage(LanguageFeature.getDocumentLanguage(document));
 			jcas.setDocumentText(document.getText());
 			uimaAnalysisEngine.process(jcas);
@@ -75,11 +84,16 @@ public class ConverterAnnotator extends Annotator
 					if (converterUimaAnnotationClass.isAssignableFrom(uimaAnnotationClass))
 					{
 						AnnotationContents annotationContents = converters.get(converterUimaAnnotationClass).convert(uimaAnnotation);
-						document.addAnnotation(uimaAnnotation.getBegin(), uimaAnnotation.getEnd(), annotationContents);
+						AnnotationReference reference = document.addAnnotation(uimaAnnotation.getBegin(), uimaAnnotation.getEnd(), annotationContents);
+						map(mapDapToUima, mapUimaToDap, reference, uimaAnnotation);
 						break;
 					}
 				}
 				// If not converted, then the caller just don't want this type of annotation to be converted.
+			}
+			if (referencesAdapter!=null)
+			{
+				referencesAdapter.adapt(document, jcas, mapDapToUima, mapUimaToDap);
 			}
 		}
 		catch(AnalysisEngineProcessException e)
@@ -96,6 +110,19 @@ public class ConverterAnnotator extends Annotator
 		{
 			jcas.release();
 		}
+	}
+	
+	
+	private void map(
+			Map<AnnotationReference, org.apache.uima.jcas.tcas.Annotation> mapDapToUima,
+			Map<org.apache.uima.jcas.tcas.Annotation, AnnotationReference> mapUimaToDap,
+			AnnotationReference dapAnnotation,
+			org.apache.uima.jcas.tcas.Annotation uimaAnnotation)
+	{
+		if (mapDapToUima.containsKey(dapAnnotation)) {throw new DapException("Duplicate annotation to map: "+dapAnnotation.toString());}
+		if (mapUimaToDap.containsKey(uimaAnnotation)) {throw new DapException("Duplicate annotation to map.");}
+		mapDapToUima.put(dapAnnotation, uimaAnnotation);
+		mapUimaToDap.put(uimaAnnotation, dapAnnotation);
 	}
 
 
@@ -130,12 +157,16 @@ public class ConverterAnnotator extends Annotator
 		}
 	}
 	
+	
+	
 
 	private final Map<Class<?>, AnnotationConverter<?>> converters;
 	private final List<Class<?>> sortedAnnotationClasses;
 	private final AnalysisEngine uimaAnalysisEngine;
 	private final JCas jcas;
 	private boolean casShouldBeReleased = false;
+	private ReferencesAdapter referencesAdapter = null;
+	
 	
 	private static final ClassComparator classComparator = new ClassComparator();
 }
