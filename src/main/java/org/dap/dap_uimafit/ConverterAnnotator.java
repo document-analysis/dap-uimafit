@@ -8,13 +8,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.uima.UIMAException;
 import org.apache.uima.analysis_engine.AnalysisEngine;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
-import org.apache.uima.fit.factory.JCasFactory;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.tcas.DocumentAnnotation;
-import org.dap.annotators.Annotator;
 import org.dap.common.DapException;
 import org.dap.data_structures.AnnotationContents;
 import org.dap.data_structures.AnnotationReference;
@@ -29,12 +26,13 @@ import org.dap.data_structures.LanguageFeature;
  * @author Asher Stern
  *
  */
-public class ConverterAnnotator extends Annotator
+public class ConverterAnnotator extends AbstractConverterAnnotator
 {
 	public ConverterAnnotator(AnalysisEngine uimaAnalysisEngine)
 	{
-		this(uimaAnalysisEngine, createJCas());
-		this.casShouldBeReleased = true;
+		this(
+				Collections.singletonMap(org.apache.uima.jcas.tcas.Annotation.class, DefaultAnnotationConverter.INSTANCE),
+				uimaAnalysisEngine);
 	}
 	
 	public ConverterAnnotator(AnalysisEngine uimaAnalysisEngine, JCas jcas)
@@ -42,22 +40,20 @@ public class ConverterAnnotator extends Annotator
 		this(
 				Collections.singletonMap(org.apache.uima.jcas.tcas.Annotation.class, DefaultAnnotationConverter.INSTANCE),
 				uimaAnalysisEngine, jcas);
-		this.casShouldBeReleased = false;
 	}
 	
 	public ConverterAnnotator(Map<Class<?>, AnnotationConverter<?>> converters, AnalysisEngine uimaAnalysisEngine)
 	{
-		this(converters, uimaAnalysisEngine, createJCas());
-		this.casShouldBeReleased = true;
+		super(uimaAnalysisEngine);
+		this.converters = converters;
+		this.sortedAnnotationClasses = sortClasses(converters.keySet());
 	}
 
 	public ConverterAnnotator(Map<Class<?>, AnnotationConverter<?>> converters, AnalysisEngine uimaAnalysisEngine, JCas jcas)
 	{
+		super(uimaAnalysisEngine, jcas);
 		this.converters = converters;
 		this.sortedAnnotationClasses = sortClasses(converters.keySet());
-		this.uimaAnalysisEngine = uimaAnalysisEngine;
-		this.jcas = jcas;
-		this.casShouldBeReleased = false;
 	}
 	
 	
@@ -106,15 +102,6 @@ public class ConverterAnnotator extends Annotator
 		}
 	}
 	
-	@Override
-	public void close()
-	{
-		super.close();
-		if ( (jcas!=null) && (casShouldBeReleased) )
-		{
-			jcas.release();
-		}
-	}
 	
 	
 	private void map(
@@ -149,26 +136,12 @@ public class ConverterAnnotator extends Annotator
 		return list;
 	}
 	
-	private static JCas createJCas()
-	{
-		try
-		{
-			return JCasFactory.createJCas();
-		}
-		catch (UIMAException e)
-		{
-			throw new DapException(e);
-		}
-	}
 	
 	
 	
 
 	private final Map<Class<?>, AnnotationConverter<?>> converters;
 	private final List<Class<?>> sortedAnnotationClasses;
-	private final AnalysisEngine uimaAnalysisEngine;
-	private final JCas jcas;
-	private boolean casShouldBeReleased = false;
 	private ReferencesAdapter referencesAdapter = null;
 	
 	
