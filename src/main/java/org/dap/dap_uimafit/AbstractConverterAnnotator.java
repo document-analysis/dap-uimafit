@@ -8,7 +8,7 @@ import org.dap.annotators.Annotator;
 import org.dap.common.DapException;
 
 /**
- * 
+ * A DAP {@link Annotator} that wraps UIMA {@link AnalysisEngine}.
  *
  * <p>
  * Date: 12 Jul 2017

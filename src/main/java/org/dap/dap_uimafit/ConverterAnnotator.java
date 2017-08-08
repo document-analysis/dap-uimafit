@@ -70,6 +70,7 @@ public class ConverterAnnotator extends AbstractConverterAnnotator
 			Map<AnnotationReference, org.apache.uima.jcas.tcas.Annotation> mapDapToUima = new LinkedHashMap<>();
 			Map<org.apache.uima.jcas.tcas.Annotation, AnnotationReference> mapUimaToDap = new LinkedHashMap<>();
 			
+			jcas.reset();
 			jcas.setDocumentLanguage(LanguageFeature.getDocumentLanguage(document));
 			jcas.setDocumentText(document.getText());
 			uimaAnalysisEngine.process(jcas);

@@ -10,7 +10,7 @@ import org.dap.data_structures.AnnotationReference;
 import org.dap.data_structures.Document;
 
 /**
- * 
+ * Encapsulation of a list of {@link ReferencesAdapter}s, as a single {@link ReferencesAdapter}.
  *
  * <p>
  * Date: 12 Jul 2017

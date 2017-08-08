@@ -3,7 +3,7 @@ package org.dap.dap_uimafit;
 import org.dap.data_structures.AnnotationContents;
 
 /**
- * 
+ * Converts a UIMA Annotation to DAP {@link AnnotationContents}.
  *
  * <p>
  * Date: 2 Jun 2017
